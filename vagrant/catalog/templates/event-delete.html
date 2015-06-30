@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+  Delete Event
+{% endblock %}
+
+
+{% block content %}
+
+  <h2>Delete {{event.title}}?</h2>
+
+  <form action="#" method="post">
+    <button type="submit">Delete</button>
+    <a href="{{ url_for('homePage') }}">Cancel</a>
+  </form>
+{% endblock %}

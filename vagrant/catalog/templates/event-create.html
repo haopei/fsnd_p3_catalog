@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+  Create Event
+{% endblock %}
+
+
+{% block content %}
+  <form action="/event/create/" method="post">
+    <input type="text" name="title" placeholder="Event Title"/>
+    <input type="submit" value="Create Event">
+  </form>
+{% endblock %}

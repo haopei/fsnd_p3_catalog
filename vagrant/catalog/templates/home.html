@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+  {{ super() }}
+{% endblock %}
+
+{% block content %}
+
+  {% for event in all_events %}
+  <ul>
+    <li>
+      <a href="/event/{{event.id}}/">{{event.title}}</a>
+      (<a href="/event/{{event.id}}/edit/">Edit</a> | <a href="/event/{{event.id}}/delete/">Delete</a>)
+    </li>
+  </ul>
+  {% endfor %}
+
+{% endblock %}

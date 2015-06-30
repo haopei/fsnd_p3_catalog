@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+  Edit Event
+{% endblock %}
+
+
+{% block content %}
+
+  <form action="#" method="post">
+    <input type="text" name="title" value="{{event.title}}" placeholder="Event Title"/>
+    <input type="submit" value="Save Event">
+  </form>
+{% endblock %}

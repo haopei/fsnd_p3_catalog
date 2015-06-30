@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <head>
+    <title>
+      {% block page_title %}Home{% endblock %} | My Event App
+    </title>
+  </head>
+  <body>
+    <h1>Home</h1>
+
+  <div>
+    <a href="/">Home</a> |
+    <a href="/event/create">Create Event</a>
+  </div>
+  <hr>
+  {% block content %}{% endblock %}
+
+  </body>
+</html>
