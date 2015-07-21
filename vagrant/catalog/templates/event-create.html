@@ -6,8 +6,31 @@
 
 
 {% block content %}
-  <form action="/event/create/" method="post">
+
+  <div class="flash">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+        {% for msg in messages %}
+          <li>{{msg}}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+
+  <form action="/event/create/" method="post" enctype="multipart/form-data">
     <input type="text" name="title" placeholder="Event Title"/>
+    <br>
+
+    {% for cat in categories %}
+      <label><input type="radio" name="category_id" value="{{cat.id}}"> {{cat.name}}</label><br>
+    {% endfor %}
+
+    <input type="file" name="photo">
+    <br><br>
+
     <input type="submit" value="Create Event">
   </form>
 {% endblock %}

@@ -9,6 +9,12 @@
 
   <form action="#" method="post">
     <input type="text" name="title" value="{{event.title}}" placeholder="Event Title"/>
+    <br>
+
+    {% for cat in categories %}
+      <input type="radio" name="category_id" value="{{cat.id}}" {% if event.category_id == cat.id%}checked{% endif %}> {{cat.name}} <br>
+    {% endfor %}
+
     <input type="submit" value="Save Event">
   </form>
 {% endblock %}

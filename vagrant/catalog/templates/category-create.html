@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+  Create Category
+{% endblock %}
+
+
+{% block content %}
+
+  <form action="#" method="post">
+    <input type="text" name="name" placeholder="Category Name">
+    <input type="submit" value="Create Category">
+  </form>
+
+  <hr>
+
+  <h3>Existing Categories</h3>
+  {% for cat in categories %}
+    {{ cat.name }}<br>
+  {% endfor %}
+
+{% endblock %}

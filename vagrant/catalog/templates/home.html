@@ -6,13 +6,30 @@
 
 {% block content %}
 
-  {% for event in all_events %}
-  <ul>
-    <li>
-      <a href="/event/{{event.id}}/">{{event.title}}</a>
-      (<a href="/event/{{event.id}}/edit/">Edit</a> | <a href="/event/{{event.id}}/delete/">Delete</a>)
-    </li>
-  </ul>
-  {% endfor %}
+Logged in as {{user.username}} ({{user.id}}) |  <a href="/logout">Logout</a>
+
+  <div class="flash">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+        {% for msg in messages %}
+          <li>{{msg}}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  {% if all_events %}
+    {% for event in all_events %}
+    <ul>
+      <li>
+        <a href="/event/{{event.id}}/">{{event.title}} | by {{event.creator_id}}</a> |
+        Category: <a href="/category/{{event.category_id}}/">{{event.category_id}}</a>
+
+      </li>
+    </ul>
+    {% endfor %}
+  {% endif %}
 
 {% endblock %}
