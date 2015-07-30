@@ -1,9 +1,9 @@
 # use sqlalchemy to map python class to tables in db
-from sqlalchemy import Column, ForeignKey, String, Integer
+from sqlalchemy import Column, ForeignKey, String, Integer, DateTime
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-
+import datetime
 
 # make an instance of declarative_base
 Base = declarative_base()
@@ -21,6 +21,13 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
 
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
 
 # User class
 class User(Base):
@@ -37,7 +44,9 @@ class Event(Base):
 
     # all fields should adhere to normalized design
     title = Column(String(250), nullable=False)
-    # description = Column(String(1000))
+    description = Column(String(1000), nullable=True)
+    image = Column(String, nullable=True)
+    created = Column(DateTime, default=datetime.datetime.utcnow)
 
     # set relationship with Category
     category_id = Column(Integer, ForeignKey('category.id'))
@@ -47,10 +56,29 @@ class Event(Base):
     creator_id = Column(Integer, ForeignKey('user.id'))
     creator = relationship(User)
 
-    def __init__(self, title, creator_id, category_id):
+    @property
+    def serialize(self):
+        """Returns object data in serializable format"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'category_id': self.category_id,
+            'creator_id': self.creator_id
+        }
+
+    def __init__(self, title, description, creator_id, category_id):
         self.title = title
+        self.description = description
         self.creator_id = creator_id
         self.category_id = category_id
+
+
+class Image(Base):
+    __tablename__ = 'image'
+    id = Column(Integer, primary_key=True)
+    serving_url = Column(String, nullable=False)
+    event_id = Column(Integer, ForeignKey('event.id'))
+    event = relationship(Event)
 
 
 engine = create_engine('sqlite:///events.db')

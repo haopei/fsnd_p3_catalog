@@ -12,10 +12,12 @@
     <h1>Home</h1>
 
   <div>
-    <a href="/">Home</a> |
-    <a href="/event/create">Create Event</a> |
-    <a href="/category/create">Create Category</a> |
-    <a href="/login">Login</a>
+    <a href="{{url_for('homePage')}}">Home</a> |
+    <a href="{{url_for('createEvent')}}">Create Event</a> |
+    <a href="{{url_for('categoryCreate')}}">Create Category</a> |
+    <a href="{{url_for('allCategories')}}">All Categories</a> |
+    <a href="{{url_for('recent_atom')}}">Atom</a> |
+    <a href="{{url_for('showLogin')}}">Login</a>
   </div>
   <hr>
 

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+  All Categories
+{% endblock %}
+
+{% block head %}
+  <link rel="alternate" type="application/rss+xml" title="Article RSS Feed" href="http://www.yoursite.com/feed" />
+{% endblock %}
+
+
+{% block content %}
+
+<h2>Select a category</h2>
+
+<ul>
+{% for cat in categories %}
+  <li><a href="{{url_for('categoryPage', category_id=cat.id)}}">{{cat.name}}</a></li>
+{% endfor %}
+</ul>
+
+{% endblock %}
+
+
+

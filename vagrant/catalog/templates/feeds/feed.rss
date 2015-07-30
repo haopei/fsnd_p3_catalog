@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+
+    <title>My Events Feed</title>
+    <link>http://localhost:5000</link>
+
+    <item>
+      <title> Title of my thing</title>
+      <description>This is the description man</description>
+    </item>
+
+  </channel>
+</rss>

@@ -1,21 +1,21 @@
 import os
 
 # import models from db_setup
-from db_setup import Base, User, Category, Event
+from db_setup import Base, User, Category, Event, Image
 
 # sqlalchemy
 from sqlalchemy import create_engine, asc
 
 # flask for templating
-from flask import Flask, render_template, request, redirect, url_for, flash, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response, jsonify, send_from_directory
 
-# for file uploads
+# for image/file uploads
 from werkzeug import secure_filename
 
 # sessions
 from sqlalchemy.orm import sessionmaker
 
-# flash's version of sessions
+# flask's version of sessions
 #   already has 'session' so we need import as 'login_session'
 from flask import session as login_session
 
@@ -33,20 +33,29 @@ import httplib2
 import json
 import requests
 
+# Feeds
+from urlparse import urljoin
+from werkzeug.contrib.atom import AtomFeed
+
 CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
 
-# file upload configurations
-APP_ROOT = os.path.dirname(os.path.abspath(__file__))
-FILE_UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static/images')
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
-
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 # define app
 #   __name__ is "__main__"
 app = Flask(__name__)
+
+
+# file upload configurations
+# APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+# FILE_UPLOAD_FOLDER = os.path.join(APP_ROOT, 'uploads/')
+# FILE_UPLOAD_FOLDER = os.path.join(APP_ROOT, 'uploads/')
+app.config['ALLOWED_EXTENSIONS'] = set(['png', 'jpg', 'jpeg', 'gif'])
+app.config['FILE_UPLOAD_FOLDER'] = 'uploads/'
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
 # Connect to db
 #   creates a new Engine instance
@@ -62,20 +71,50 @@ db_session = sessionmaker(bind=engine)
 session = db_session()
 
 # Rubric:
-#  [] implement json endpoint with all required content. U: implement additional api endpoints (rss, atom, xml)
-#  [x] page reads category and item info from db.
-#  !!![] U: add image that reads from db
-#  [x] Add new items.
+#  [x] implement json endpoint with all required content.
+#       [] U: implement additional api endpoints
+#          [x] atom
+#          [] rss
+#          [] xml
+#  [x] U: add image that reads from db
 #  [] U: new item form includes image input
-#  [x] Page includes edit/update functionality.
 #  [] U: Include item images.
-#  [x] Delete functionality.
-#  [] U: Uses nonces to avoid cross-site request forgeries (CSRF)
-#  [x] Implement a third party authorization and authentication process.
-#  [] CRUD operations should consider authorization status prior to execution.
-#  [] code quality is neatly formatted
-#  [] comments
+#  [] fb login
 #  [] readme doc
+#  [x] U: Uses nonces to avoid cross-site request forgeries (CSRF)
+#  [x] page reads category and item info from db.
+#  [x] Add new items.
+#  [x] Page includes edit/update functionality.
+#  [x] Delete functionality.
+#  [x] Implement a third party authorization and authentication process.
+#  [x] CRUD operations should consider authorization status prior to execution.
+#       [x] create events
+#       [x] delete own events, and not other events
+#       [x] edit own events, and not other events
+#  [x] code quality is neatly formatted
+#  [x] code comments
+
+
+# Feed handlers
+def make_external(url):
+    return urljoin(request.url_root, url)
+
+
+# Atom
+@app.route('/recent_atom/')
+def recent_atom():
+    app.logger.debug(request.url_root)
+    feed = AtomFeed('Recent Events', feed_url=request.url, url=request.url_root)
+    events = session.query(Event).all()
+    for e in events:
+        feed.add(id=e.id, title=e.title, content_type='html', updated=e.created)
+    return feed.get_response()
+
+
+# rss
+@app.route('/feed/')
+def feed():
+    return render_template('feeds/feed.rss')
 
 
 # login page
@@ -286,17 +325,6 @@ def homePage():
     return render_template('home.html', all_events=all_events, user=user)
 
 
-@app.route('/category/<int:category_id>/')
-def categoryPage(category_id):
-    category = session.query(Category).filter_by(id=category_id).one()
-    if category:
-        events = session.query(Event).filter_by(category_id=category.id).all()
-        return render_template('category-page.html', category=category, events=events)
-    else:
-        response = make_response(json.dumps('Cannot find category id: %s' % category_id), 404)
-        return response
-
-
 # Create Event
 @app.route('/event/create/', methods=['GET', 'POST'])
 def createEvent():
@@ -304,29 +332,18 @@ def createEvent():
     # check if user is logged in
     # if so, allow them to make event
     if is_logged_in():
-        # print login_session['user_id'] or "Not logged in"
+        print login_session['user_id'] or "Not logged in"
         categories = session.query(Category).all()
         if request.method == 'POST':
-            app.logger.debug(request.data)
+            app.logger.debug(request.method)
             title = request.form['title']
-
-            # handle event photo upload
-            photo = request.files['photo']
-            if photo and allowed_file(photo.filename):
-                photo_filename = secure_filename(photo.filename)
-                path = os.path.join(app.config['FILE_UPLOAD_FOLDER'], photo_filename)
-                app.logger.debug(photo_filename)
-                # app.logger.debug(path)
-                photo.save(path)
-
+            description = request.form['description']
             category = request.form['category_id']
-
-            # category_ids = request.form.getlist('category')
             new_event = Event(
                 title=title,
+                description=description,
                 creator_id=login_session['user_id'],
                 category_id=category)
-
             # create and save new Event instance
             session.add(new_event)
             session.commit()
@@ -343,7 +360,15 @@ def createEvent():
 def editEvent(event_id):
     event = session.query(Event).filter_by(id=event_id).one()
     categories = session.query(Category).all()
-    if login_session.get('user_id'):
+
+    # check if there is a logged in user; return his id if logged in
+    logged_in_user_id = login_session.get('user_id')
+
+    # handle unauthenticated user
+    if not logged_in_user_id:
+        response = make_response(json.dumps('You are not logged in'), 301)
+
+    if logged_in_user_id == event.creator_id:
         if request.method == 'POST':
             event.title = request.form['title']
             event.category_id = request.form['category_id']
@@ -353,7 +378,7 @@ def editEvent(event_id):
         elif request.method == 'GET':
             return render_template('event-edit.html', event=event, categories=categories)
     else:
-        response = make_response(json.dumps('User is not logged in.'), 300)
+        response = make_response(json.dumps('You are not authorized to edit this event.'), 300)
         return response
 
 
@@ -364,7 +389,8 @@ def deleteEvent(event_id):
 
     # check if user is logged in
     if 'username' not in login_session:
-        return redirect('/login')
+        response = make_response(json.dumps('User is not logged in'), 301)
+        return response
 
     # check if user has authorization to delete
     if event_to_delete.creator_id != login_session['user_id']:
@@ -383,14 +409,24 @@ def deleteEvent(event_id):
 @app.route('/event/<int:event_id>/')
 def showEvent(event_id):
     event = session.query(Event).filter_by(id=event_id).one()
-    print is_logged_in_as_author(event.creator_id)
-    print is_logged_in()
-
+    event_images = session.query(Image).filter_by(event_id=event_id).all()
     if login_session.get('user_id') and event.creator_id == login_session['user_id']:
-    # if is_logged_in() and is_logged_in_as_author(event.creator_id):
-        return render_template('event-page.html', event=event)
+        return render_template('event-page.html', event=event, event_images=event_images)
     else:
-        return render_template('public-event-page.html', event=event)
+        return render_template('public-event-page.html', event=event, event_images=event_images)
+
+
+# API Endpoint: Event Page JSON
+@app.route('/event/<int:event_id>/JSON/')
+def eventJSON(event_id):
+    event = session.query(Event).filter_by(id=event_id).all()
+    return jsonify(EventItem=[e.serialize for e in event])
+
+
+@app.route('/categories/JSON/')
+def categoriesJSON():
+    categories = session.query(Category).all()
+    return jsonify(Categories=[cat.serialize for cat in categories])
 
 
 # Category create
@@ -405,6 +441,60 @@ def categoryCreate():
     elif request.method == 'GET':
         categories = session.query(Category).order_by(asc(Category.name)).all()
         return render_template('category-create.html', categories=categories)
+
+
+@app.route('/category/<int:category_id>/')
+def categoryPage(category_id):
+    category = session.query(Category).filter_by(id=category_id).one()
+    if category:
+        events = session.query(Event).filter_by(category_id=category.id).all()
+        return render_template('category-page.html', category=category, events=events)
+    else:
+        response = make_response(json.dumps('Cannot find category id: %s' % category_id), 404)
+        return response
+
+
+@app.route('/categories/')
+def allCategories():
+    categories = session.query(Category).all()
+    response = render_template('all-categories.html', categories=categories)
+    return response
+
+
+@app.route('/upload/<int:event_id>/', methods=['POST'])
+def upload(event_id):
+    event = get_event_by_id(event_id)
+    if event:
+        uploaded_file = request.files['file']
+        if uploaded_file and allowed_file(uploaded_file.filename):
+            filename = secure_filename(uploaded_file.filename)
+            file_url = os.path.join(app.config['FILE_UPLOAD_FOLDER'], filename)
+            uploaded_file.save(file_url)
+
+            # create new Image object
+            image = Image(event_id=event.id, serving_url=file_url)
+            session.add(image)
+            session.commit()
+
+            app.logger.debug('image.serving_url: ' + image.serving_url)
+            app.logger.debug('file_url: ' + file_url)
+            app.logger.debug('app.config["FILE_UPLOAD_FOLDER"]: ' + app.config['FILE_UPLOAD_FOLDER'])
+
+            return redirect(url_for('uploaded_file', filename=filename))
+        return make_response(json.dumps('Error uploading file'), 500)
+    else:
+        return make_response(json.dumps('The event for which this image is uploaded does not exist.'), 400)
+
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['FILE_UPLOAD_FOLDER'], filename)
+
+
+@app.route('/all-images/')
+def allImages():
+    images = session.query(Image).all()
+    return render_template('all-images.html', images=images)
 
 
 # Create new user
@@ -441,6 +531,11 @@ def is_logged_in():
     return False
 
 
+def get_event_by_id(event_id):
+    event = session.query(Event).filter_by(id=event_id).one()
+    return event or None
+
+
 def is_logged_in_as_author(author_id):
     return login_session.get('user_id') == author_id
 
@@ -449,7 +544,5 @@ def is_logged_in_as_author(author_id):
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'  # flask uses this to create sessions
     app.debug = True
-    app.config['FILE_UPLOAD_FOLDER'] = FILE_UPLOAD_FOLDER
-    app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
     # app.logger.debug(app.config)
     app.run(host='0.0.0.0', port=5000)

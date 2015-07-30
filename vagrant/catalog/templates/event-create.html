@@ -20,16 +20,13 @@
   </div>
 
 
-  <form action="/event/create/" method="post" enctype="multipart/form-data">
-    <input type="text" name="title" placeholder="Event Title"/>
-    <br>
+  <form action="/event/create/" method="POST">
+    <input type="text" name="title" placeholder="Event Title"/> <br>
+    <textarea name="description" cols="30" rows="10"></textarea>
 
     {% for cat in categories %}
-      <label><input type="radio" name="category_id" value="{{cat.id}}"> {{cat.name}}</label><br>
+      <label><input type="radio" name="category_id" value="{{cat.id}}">{{cat.name}}</label><br>
     {% endfor %}
-
-    <input type="file" name="photo">
-    <br><br>
 
     <input type="submit" value="Create Event">
   </form>

@@ -11,7 +11,24 @@
 Created by {{event.creator_id}} <br>
 Category: {{event.category_id}} <br>
 
- <a href="/event/{{event.id}}/edit/">Edit</a> | <a href="/event/{{event.id}}/delete/">Delete</a>
+ <a href="/event/{{event.id}}/edit/">Edit</a> | <a href="/event/{{event.id}}/delete/">Delete</a> | <a href="/event/{{event.id}}/JSON/">JSON</a>
+
+ {{event.image}}
+
+
+ <hr>
+
+ <form action="/upload/{{event.id}}/" method="post" enctype="multipart/form-data">
+   <input type="file" name="file">
+   <input type="submit" value="Upload Image">
+ </form>
+
+ <hr>
+
+ {{event_images}}
+ {% for img in event_images %}
+ <img src="/{{img.serving_url}}" alt="">
+ {% endfor %}
 
 {% endblock %}
 

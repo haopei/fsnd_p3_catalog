@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+  All Images
+{% endblock %}
+
+
+{% block content %}
+
+  {{images}}
+  {% for img in images %}
+    <img src="{{img.serving_url}}" alt="">
+  {% endfor %}
+{% endblock %}
