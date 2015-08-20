@@ -7,27 +7,31 @@
 
 {% block content %}
 
-  <div class="flash">
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-        {% for msg in messages %}
-          <li>{{msg}}</li>
+<div class="container">
+  <div class="row">
+
+    <div class="col-xs-12">
+      <h2>Create New Event</h2>
+    </div>
+
+    <div class="col-xs-12">
+      <form action="/event/create/" method="POST">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+        <label for="event-title">Title</label><br>
+        <input type="text" name="title" id="event-title" placeholder="Event Title"/> <br> <br>
+
+        <label for="event-description">Description</label><br>
+        <textarea name="description" id="event-description" cols="30" rows="10"></textarea> <br> <br>
+        <label for="">Select a Category</label><br>
+        {% for cat in categories %}
+          <label><input type="radio" name="category_id" value="{{cat.id}}"> {{cat.name}}</label><br>
         {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+        <br>
+        <input type="submit" value="Create Event">
+      </form>
+    </div>
   </div>
+</div>
 
-
-  <form action="/event/create/" method="POST">
-    <input type="text" name="title" placeholder="Event Title"/> <br>
-    <textarea name="description" cols="30" rows="10"></textarea>
-
-    {% for cat in categories %}
-      <label><input type="radio" name="category_id" value="{{cat.id}}">{{cat.name}}</label><br>
-    {% endfor %}
-
-    <input type="submit" value="Create Event">
-  </form>
 {% endblock %}

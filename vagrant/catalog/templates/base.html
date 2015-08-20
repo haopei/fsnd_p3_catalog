@@ -4,24 +4,130 @@
     <title>
       {% block page_title %}Home{% endblock %} | My Event App
     </title>
+    <link rel="stylesheet" href="/static/styles/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/styles/main.css">
+
+    <script src="/static/scripts/jquery-1.11.3.min.js"></script>
 
     {% block head %}{% endblock %}
 
+    <!--LOAD PRE-REQUISITES FOR GOOGLE SIGN IN -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+
+    <script src="//apis.google.com/js/platform.js?onload=start" async defer></script>
+
+
   </head>
   <body>
-    <h1>Home</h1>
 
-  <div>
-    <a href="{{url_for('homePage')}}">Home</a> |
-    <a href="{{url_for('createEvent')}}">Create Event</a> |
-    <a href="{{url_for('categoryCreate')}}">Create Category</a> |
-    <a href="{{url_for('allCategories')}}">All Categories</a> |
-    <a href="{{url_for('recent_atom')}}">Atom</a> |
-    <a href="{{url_for('showLogin')}}">Login</a>
-  </div>
-  <hr>
+    <div class="container">
 
-  {% block content %}{% endblock %}
+      <div class="row header">
+        <div class="col-xs-6">
+          <h1><a href="/">Guyana Daily Events</a></h1>
+        </div>
+
+        <div class="col-xs-6 top-right">
+          {% if g.user %}
+            <a href="{{ url_for('userPage', user_id=g.user.id) }}">{{g.user.username}} ({{g.user.id}})</a> | <a href="{{url_for('createEvent')}}">Create Event</a> | <a href="/logout">Logout</a>
+          {% else %}
+            <div id="signinButton">
+
+          <!-- Step 1. The Google Sign In Button
+              If the client ID is valid, a popup sign in prompt appears and
+              allows the user to log on and approve authorization for the app
+              to access his profile -->
+
+              <span class="g-signin" data-scope="openid email" data-clientid="110779018634-1alavf5cs7svqo8hh4rq2ifq71pg9r9o.apps.googleusercontent.com" data-redirecturi="postmessage" data-accesstype="offline" data-cookiepolicy="single_host_origin" data-callback="signInCallback" data-approvalprompt="force">
+            </span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <hr>
+
+      <div id="content">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash">
+          <ul>
+          {% for msg in messages %}
+            <li>{{msg}}</li>
+          {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      {% endwith %}
+
+        {% block content %}{% endblock %}
+      </div>
+
+      <hr>
+
+      <footer>
+        <div class="row">
+          <div class="col-sm-6">
+            <p>Subscribe to all upcoming events: <a href="{{url_for('recent_json')}}">JSON</a> | <a href="{{url_for('recent_atom')}}">Atom</a></p>
+          </div>
+          <div class="col-sm-6">
+            <p>State: {{g.state}}</p>
+          </div>
+        </div>
+      </footer>
+    </div> <!-- /container -->
+
+  <script>
+    function signInCallback(authResult) {
+
+      // Step 2
+      //  The google server returns a result object
+      //  containing the validity of the user's login.
+      //  If everything is valid, send state token and auth code to the /gconnect handler
+
+
+      // "4/736rfXQ9HI-n5kHEtVR3eGOff2yMT0mvLiC0Ch6E_CQ"
+      console.log(authResult['code']);
+
+
+      if (authResult['code']) {
+        // hide the signin button
+        $('#signinButton').hide()
+        var currentURL = window.location.pathname
+
+        // send the authResult['code'] to /gconnect handler
+        //    along with STATE code
+        $.ajax({
+          type: 'POST',
+          url: '/gconnect?state={{g.state}}',
+          processData: false,
+          contentType: 'application/octet-stream; charset=uft-8',
+          data: authResult['code'],
+          success: function(result) {
+
+            console.log('success function result: ', result)
+
+            if (result) {
+
+              // show success message
+              $('#result').html('Login successful! </br>' + result + '</br> Redirecting...')
+              // redirect in 5 seconds
+              setTimeout(function() {
+                window.location.href = currentURL;
+              }, 3000);
+            } else if (authResult['error']) {
+              console.log('There was an error: ' + authResult['error']);
+            }
+            else {
+              console.log('Login failed. But why?')
+            }
+          }
+        });
+      }
+    }
+
+  </script>
+
 
   </body>
 </html>

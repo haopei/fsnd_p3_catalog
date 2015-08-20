@@ -7,28 +7,57 @@
 
 {% block content %}
 
-<h2>{{event.title}}</h2>
-Created by {{event.creator_id}} <br>
-Category: {{event.category_id}} <br>
+  <div class="row event-page">
+    <div class="col-sm-12 title-container">
+      <a href="{{ url_for('homePage') }}">Events</a> > <a href="{{url_for('categoryPage', category_id=event.category_id)}}">{{event.category.name}}</a>
+      <h2>{{event.title}}</h2>
+      <small>Created by <a href="{{ url_for('userPage', user_id=event.creator.id) }}">{{event.creator.username}}</a></small>
+    </div>
 
- <a href="/event/{{event.id}}/edit/">Edit</a> | <a href="/event/{{event.id}}/delete/">Delete</a> | <a href="/event/{{event.id}}/JSON/">JSON</a>
+    <div class="row">
+      <div class="col-sm-12">
+        {% if event_images %}
+          {% for img in event_images %}
+            <img src="/{{img.serving_url}}" alt="" width="100%">
+          {% endfor %}
+        {% else %}
+        <div class="row image-upload-container">
+          <div class="col-sm-8">You can upload an image for your event.</div>
+          <div class="col-sm-4">
+            <form action="/upload/{{event.id}}/" method="post" enctype="multipart/form-data" id="event_image_upload_form">
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+              <input type="file" name="file">
+              <input type="submit" value="Upload Image">
+             </form>
+          </div>
+        </div>
 
- {{event.image}}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-sm-12">
+      <section>
+        <h3>Description</h3>
+        <p>{{event.description}}</p>
+      <div class="row">
+        <div class="col-xs-12">
+          <hr>
+          <a href="/event/{{event.id}}/edit/">Edit Event</a> | <a href="/event/{{event.id}}/delete/">Delete Event</a> | <a href="/event/{{event.id}}/JSON/">Event JSON</a>
+        </div>
+      </div>
+      </section>
+
+    </div>
+
+  </div>
+
+<script>
+  // $('#event_image_upload_form').hide()
 
 
- <hr>
+</script>
 
- <form action="/upload/{{event.id}}/" method="post" enctype="multipart/form-data">
-   <input type="file" name="file">
-   <input type="submit" value="Upload Image">
- </form>
-
- <hr>
-
- {{event_images}}
- {% for img in event_images %}
- <img src="/{{img.serving_url}}" alt="">
- {% endfor %}
 
 {% endblock %}
 

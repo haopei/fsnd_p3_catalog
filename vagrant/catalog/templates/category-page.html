@@ -7,13 +7,38 @@
 
 {% block content %}
 
-<h2>{{category.name}}</h2>
+<div class="container">
+  <div class="row">
+    <div class="col-xs-3">
+      <h4>Event Categories</h4>
+      {% if all_categories %}
+        <ul class="categories-list">
+          {% for cat in all_categories %}
+            <li><a href="{{ url_for('categoryPage', category_id=cat.id) }}">{{cat.name}}</a></li>
+          {% endfor %}
+        </ul>
+        <br>
+        <a href="{{ url_for('categories_json') }}">Categories JSON</a>
+      {% endif %}
+    </div>
 
-<ul>
-{% for event in events %}
-  <li><a href="{{url_for('showEvent', event_id=event.id)}}">{{event.title}}</a></li>
-{% endfor %}
-</ul>
+    <div class="col-xs-9">
+      <h2>{{category.name}}</h2>
+
+      {% if events %}
+        <ul>
+        {% for event in events %}
+          <li><a href="{{url_for('showEvent', event_id=event.id)}}">{{event.title}}</a></li>
+        {% endfor %}
+        </ul>
+      {% else %}
+        <small>No event created in this category.</small>
+      {% endif %}
+
+    </div>
+
+  </div>
+</div>
 
 {% endblock %}
 

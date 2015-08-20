@@ -7,7 +7,10 @@ from db_setup import Base, User, Category, Event, Image
 from sqlalchemy import create_engine, asc
 
 # flask for templating
-from flask import Flask, render_template, request, redirect, url_for, flash, make_response, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response, jsonify, send_from_directory, g
+
+# utility functions
+from util import *
 
 # for image/file uploads
 from werkzeug import secure_filename
@@ -18,10 +21,6 @@ from sqlalchemy.orm import sessionmaker
 # flask's version of sessions
 #   already has 'session' so we need import as 'login_session'
 from flask import session as login_session
-
-# Used for generating state token
-import random
-import string
 
 # create flow object from client_secret.json file
 from oauth2client.client import flow_from_clientsecrets
@@ -34,19 +33,19 @@ import json
 import requests
 
 # Feeds
-from urlparse import urljoin
+# from urlparse import urljoin
 from werkzeug.contrib.atom import AtomFeed
 
-CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
+from functools import wraps
 
+CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
 
 # define app
 #   __name__ is "__main__"
 app = Flask(__name__)
 
-
 # file upload configurations
-# APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 # FILE_UPLOAD_FOLDER = os.path.join(APP_ROOT, 'uploads/')
 # FILE_UPLOAD_FOLDER = os.path.join(APP_ROOT, 'uploads/')
 app.config['ALLOWED_EXTENSIONS'] = set(['png', 'jpg', 'jpeg', 'gif'])
@@ -71,15 +70,14 @@ db_session = sessionmaker(bind=engine)
 session = db_session()
 
 # Rubric:
+#  [x] Student researches and implements this function using POST requests and nonces to prevent cross-site request forgeries (CSRF).
 #  [x] implement json endpoint with all required content.
-#       [] U: implement additional api endpoints
+#       [x] U: implement additional api endpoints
 #          [x] atom
-#          [] rss
-#          [] xml
+#          [x] rss
 #  [x] U: add image that reads from db
-#  [] U: new item form includes image input
-#  [] U: Include item images.
-#  [] fb login
+#  [x] U: new item form includes image input
+#  [x] U: Include item images.
 #  [] readme doc
 #  [x] U: Uses nonces to avoid cross-site request forgeries (CSRF)
 #  [x] page reads category and item info from db.
@@ -93,11 +91,23 @@ session = db_session()
 #       [x] edit own events, and not other events
 #  [x] code quality is neatly formatted
 #  [x] code comments
+#  [x] Understood python decorators
+#  [x] can login at any page which injects state token
 
-
-# Feed handlers
-def make_external(url):
-    return urljoin(request.url_root, url)
+## CHECKS
+# [x] login with google
+# [x] logout of google
+# [x] create event
+# [x] edit event
+# [x] upload pics per event
+# [x] edit pics per event (file renamed; previous pic is deleted)
+# [x] categories; events per category
+# [x] delete event
+# [x] JSON/ATOM of all events
+# [x] JSON of individual events
+# [x] JSON of categories
+# [x] all categories on front page
+# [x] prettify the page
 
 
 # Atom
@@ -111,22 +121,75 @@ def recent_atom():
     return feed.get_response()
 
 
-# rss
-@app.route('/feed/')
-def feed():
-    return render_template('feeds/feed.rss')
+# XML
+@app.route('/recent_rss/')
+def recent_rss():
+    events = session.query(Event).all()
+    response = make_response(render_template('feeds/feed.xml', events=events))
+    response.headers['Content-Type'] = 'application/xml'
+    return response
 
 
-# login page
-@app.route('/login')
-def showLogin():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+@app.route('/recent_json/')
+def recent_json():
+    events = session.query(Event).all()
+    return jsonify(Events=[e.serialize for e in events])
 
-    # This state token is sent to the login.html as STATE
-    #   The login.html sends this state token back to /gconnect for comparison
-    login_session['state'] = state
 
-    return render_template('login.html', STATE=state)
+@app.route('/categories_json')
+def categories_json():
+    categories = session.query(Category).all()
+    return jsonify(Categories=[c.serialize for c in categories])
+
+
+# Decorated function injects a different state token to templates
+# for gconnect
+def inject_state_token(func):
+    @wraps(func)
+    def wrapper(*arg, **kwargs):
+        if login_session.get('user_id'):
+            g.user = session.query(User).filter_by(id=login_session.get('user_id')).one()
+        # state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+        state = generate_random_string(32)
+        login_session['state'] = state
+        g.state = state
+        return func(*arg, **kwargs)
+    return wrapper
+
+
+# Before each POST request, csrf_protect() is run.
+# These paths are do not require CSRF protection.
+NO_CSRF_REQUIRED = ['/gconnect']
+
+
+# CSRF Protection
+# http://flask.pocoo.org/snippets/3/
+@app.before_request
+def csrf_protect():
+    if request.method == "POST" and request.path not in NO_CSRF_REQUIRED:
+        token = login_session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            return make_response(json.dumps('there is no token or the token does not match.'), 300)
+
+
+# generates the csrf token for form submission
+def generate_csrf_token():
+    if '_csrf_token' not in login_session:
+        # if no token exists already, create one
+        login_session['_csrf_token'] = generate_random_string(32)
+        app.logger.debug('_csrf_token does not exist inside login_session. Creating one now: {0}'.format(login_session['_csrf_token']))
+    return login_session['_csrf_token']
+
+app.jinja_env.globals['csrf_token'] = generate_csrf_token
+
+
+def login_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not login_session.get('user_id'):
+            return make_response(json.dumps('You aint logged in'), 300)
+        return func(*args, **kwargs)
+    return wrapper
 
 
 # gconnect functionality
@@ -149,7 +212,6 @@ def gconnect():
     #   data: authResult['code']
     #   to be used for upgrading into a credentials object
     code = request.data
-    print "request.data: ", request.data
 
     try:
         # upgrade authorization code for credentials object
@@ -167,7 +229,7 @@ def gconnect():
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s' % access_token)
 
     h = httplib2.Http()
-    print 'httplib2.Http(): ', h
+    # print 'httplib2.Http(): ', h
 
     # after the credentials.access_token is sent for validating
     #   the google api server returns this result object
@@ -225,7 +287,7 @@ def gconnect():
 
     # Instead, we can just store the access_token
     login_session['access_token'] = credentials.access_token
-    print "159: login_session['access_token']: ", login_session['access_token']
+    # print "159: login_session['access_token']: ", login_session['access_token']
 
     # get info about user
     #   using the access token and userinfo url
@@ -257,7 +319,7 @@ def gconnect():
 
     # create new user, if user does not exist
     user_id = get_user_id_by_email(login_session['email'])
-    print '191: user_id:', user_id
+    # print '191: user_id:', user_id
     if not user_id:
         print "User id does not exist, creating new user."
         user_id = create_user(login_session)
@@ -266,7 +328,7 @@ def gconnect():
     #   this is the serial user_id for the User accounts; not the gplus_id
     login_session['user_id'] = user_id
 
-    print "Logging in with user_id: ", user_id
+    # print "Logging in with user_id: ", user_id
 
     output = ''
     output += '<h1>Welcome, '
@@ -306,9 +368,8 @@ def logout():
         del login_session['username']
         del login_session['email']
         del login_session['picture']
-
-        response = make_response(json.dumps('User successfully disconnected.'), 200)
-        response.headers['Content-Type'] = 'application/json'
+        flash('You have logged out. Come back soon!')
+        response = redirect(url_for('homePage'))
         return response
     else:
         # if token is invalid
@@ -319,45 +380,62 @@ def logout():
 
 # define route handlers
 @app.route('/')
+@inject_state_token
 def homePage():
-    user = get_user_by_id(login_session.get('user_id'))
+    # user = get_user_by_id(login_session.get('user_id'))
+    all_categories = session.query(Category).order_by(Category.name).all()
     all_events = session.query(Event).order_by(asc(Event.title)).all()
-    return render_template('home.html', all_events=all_events, user=user)
+    return render_template('home.html', all_events=all_events, all_categories=all_categories)
+
+
+@app.route('/u/<int:user_id>')
+@inject_state_token
+def userPage(user_id):
+    user = session.query(User).filter_by(id=user_id).one()
+    events = []
+    if user:
+        events = session.query(Event).filter_by(creator_id=user.id).all()
+    return render_template('user-page.html', user=user, events=events)
 
 
 # Create Event
 @app.route('/event/create/', methods=['GET', 'POST'])
+@inject_state_token
+@login_required
 def createEvent():
+    categories = session.query(Category).all()
+    if request.method == 'POST':
+        app.logger.debug(request.method)
+        title = request.form['title']
+        description = request.form['description']
+        category_id = request.form['category_id']
+        new_event = Event(
+            title=title,
+            description=description,
+            creator_id=login_session['user_id'],
+            category_id=category_id)
+        session.add(new_event)
+        session.commit()
+        flash('New event created: %s' % new_event.title)
+        return redirect(url_for('showEvent', event_id=new_event.id))
+    elif request.method == 'GET':
+        return render_template('event-create.html', categories=categories)
 
-    # check if user is logged in
-    # if so, allow them to make event
-    if is_logged_in():
-        print login_session['user_id'] or "Not logged in"
-        categories = session.query(Category).all()
-        if request.method == 'POST':
-            app.logger.debug(request.method)
-            title = request.form['title']
-            description = request.form['description']
-            category = request.form['category_id']
-            new_event = Event(
-                title=title,
-                description=description,
-                creator_id=login_session['user_id'],
-                category_id=category)
-            # create and save new Event instance
-            session.add(new_event)
-            session.commit()
-            flash('New event created: %s' % new_event.title)
-            return redirect(url_for('showEvent', event_id=new_event.id))
-        elif request.method == 'GET':
-            return render_template('event-create.html', categories=categories)
-    else:
-        return make_response(json.dumps('You are not logged in.'), 300)
+
+def logged_in_as_author_required(func):
+    @wraps(func)
+    def wrapper(author_id):
+        if login_session.get('user_id') != author_id:
+            return make_response(json.dumps('You are not authorized to do this.'), 300)
+        return func(author_id)
+    return wrapper
 
 
 # Event Edit
 @app.route('/event/<int:event_id>/edit/', methods=['GET', 'POST'])
+@inject_state_token
 def editEvent(event_id):
+
     event = session.query(Event).filter_by(id=event_id).one()
     categories = session.query(Category).all()
 
@@ -371,10 +449,11 @@ def editEvent(event_id):
     if logged_in_user_id == event.creator_id:
         if request.method == 'POST':
             event.title = request.form['title']
+            event.description = request.form['description']
             event.category_id = request.form['category_id']
             session.commit()
             flash('Event saved: %s' % event.title)
-            return redirect(url_for('homePage'))
+            return redirect(url_for('showEvent', event_id=event_id))
         elif request.method == 'GET':
             return render_template('event-edit.html', event=event, categories=categories)
     else:
@@ -384,6 +463,7 @@ def editEvent(event_id):
 
 # Event Delete
 @app.route('/event/<int:event_id>/delete/', methods=['GET', 'POST'])
+@inject_state_token
 def deleteEvent(event_id):
     event_to_delete = session.query(Event).filter_by(id=event_id).one()
 
@@ -398,7 +478,20 @@ def deleteEvent(event_id):
 
     if request.method == 'POST':
         session.delete(event_to_delete)
+
+        # delete images associated with this event
+        images = session.query(Image).filter_by(event_id=event_to_delete.id).all()
+        if images:
+            try:
+                for img in images:
+                    # delete Image object from database
+                    session.delete(img)
+                    # delete image from file system
+                    os.remove(img.serving_url)
+            except:
+                return make_response(json.dumps('Failed to delete event images'), 500)
         session.commit()
+
         flash('Event deleted: %s' % event_to_delete.title)
         return redirect(url_for('homePage'))
     elif request.method == 'GET':
@@ -407,6 +500,7 @@ def deleteEvent(event_id):
 
 # Event Page
 @app.route('/event/<int:event_id>/')
+@inject_state_token
 def showEvent(event_id):
     event = session.query(Event).filter_by(id=event_id).one()
     event_images = session.query(Image).filter_by(event_id=event_id).all()
@@ -416,7 +510,7 @@ def showEvent(event_id):
         return render_template('public-event-page.html', event=event, event_images=event_images)
 
 
-# API Endpoint: Event Page JSON
+# JSON Endpoint per event
 @app.route('/event/<int:event_id>/JSON/')
 def eventJSON(event_id):
     event = session.query(Event).filter_by(id=event_id).all()
@@ -431,6 +525,8 @@ def categoriesJSON():
 
 # Category create
 @app.route('/category/create/', methods=['GET', 'POST'])
+@inject_state_token
+@login_required
 def categoryCreate():
     if request.method == 'POST':
         category_name = request.form['name']
@@ -444,17 +540,20 @@ def categoryCreate():
 
 
 @app.route('/category/<int:category_id>/')
+@inject_state_token
 def categoryPage(category_id):
     category = session.query(Category).filter_by(id=category_id).one()
     if category:
         events = session.query(Event).filter_by(category_id=category.id).all()
-        return render_template('category-page.html', category=category, events=events)
+        all_categories = session.query(Category).order_by(Category.name).all()
+        return render_template('category-page.html', category=category, events=events, all_categories=all_categories)
     else:
         response = make_response(json.dumps('Cannot find category id: %s' % category_id), 404)
         return response
 
 
 @app.route('/categories/')
+@inject_state_token
 def allCategories():
     categories = session.query(Category).all()
     response = render_template('all-categories.html', categories=categories)
@@ -463,24 +562,33 @@ def allCategories():
 
 @app.route('/upload/<int:event_id>/', methods=['POST'])
 def upload(event_id):
-    event = get_event_by_id(event_id)
+    event = session.query(Event).filter_by(id=event_id).one()
     if event:
         uploaded_file = request.files['file']
+        uploaded_file.filename = rename_file(uploaded_file.filename, str(event_id))
         if uploaded_file and allowed_file(uploaded_file.filename):
             filename = secure_filename(uploaded_file.filename)
             file_url = os.path.join(app.config['FILE_UPLOAD_FOLDER'], filename)
             uploaded_file.save(file_url)
 
-            # create new Image object
-            image = Image(event_id=event.id, serving_url=file_url)
+            # check if existing image exists
+            image = session.query(Image).filter_by(event_id=event.id).all()
+
+            # if there is no existing image,
+            #   create a new image
+            if len(image) is 0:
+                image = Image(event_id=event.id, serving_url=file_url)
+            else:
+                image = image[0]
+                # delete existing image from system
+                # change the serving url to the current one
+                os.remove(image.serving_url)
+                image.serving_url = file_url
+
             session.add(image)
             session.commit()
 
-            app.logger.debug('image.serving_url: ' + image.serving_url)
-            app.logger.debug('file_url: ' + file_url)
-            app.logger.debug('app.config["FILE_UPLOAD_FOLDER"]: ' + app.config['FILE_UPLOAD_FOLDER'])
-
-            return redirect(url_for('uploaded_file', filename=filename))
+            return redirect(url_for('showEvent', event_id=event_id))
         return make_response(json.dumps('Error uploading file'), 500)
     else:
         return make_response(json.dumps('The event for which this image is uploaded does not exist.'), 400)
@@ -492,6 +600,7 @@ def uploaded_file(filename):
 
 
 @app.route('/all-images/')
+@inject_state_token
 def allImages():
     images = session.query(Image).all()
     return render_template('all-images.html', images=images)
@@ -525,19 +634,16 @@ def get_user_by_id(user_id):
         return None
 
 
-def is_logged_in():
-    if login_session.get('user_id'):
-        return True
-    return False
+# def is_logged_in():
+#     if login_session.get('user_id'):
+#         return True
+#     return False
 
 
-def get_event_by_id(event_id):
-    event = session.query(Event).filter_by(id=event_id).one()
-    return event or None
+# def get_event_by_id(event_id):
+#     event = session.query(Event).filter_by(id=event_id).one()
+#     return event or None
 
-
-def is_logged_in_as_author(author_id):
-    return login_session.get('user_id') == author_id
 
 # if we are executing app.py
 #   run this app on the selected port

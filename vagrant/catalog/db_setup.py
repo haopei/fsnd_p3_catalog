@@ -45,7 +45,6 @@ class Event(Base):
     # all fields should adhere to normalized design
     title = Column(String(250), nullable=False)
     description = Column(String(1000), nullable=True)
-    image = Column(String, nullable=True)
     created = Column(DateTime, default=datetime.datetime.utcnow)
 
     # set relationship with Category
@@ -62,6 +61,7 @@ class Event(Base):
         return {
             'id': self.id,
             'title': self.title,
+            'description': self.description,
             'category_id': self.category_id,
             'creator_id': self.creator_id
         }

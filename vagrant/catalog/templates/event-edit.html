@@ -8,11 +8,20 @@
 {% block content %}
 
   <form action="#" method="post">
-    <input type="text" name="title" value="{{event.title}}" placeholder="Event Title"/>
-    <br>
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
+    <label for="event-title">Title</label><br>
+    <input type="text" name="title" id="event-title" value="{{event.title}}" placeholder="Event Title"/>
+    <br><br>
+
+    <label for="event-description">Description</label><br>
+    <textarea name="description" id="event-description" cols="30" rows="10">{{event.description}}</textarea>
+
+    <br><br>
+
+    <label for="">Select a Category</label><br>
     {% for cat in categories %}
-      <input type="radio" name="category_id" value="{{cat.id}}" {% if event.category_id == cat.id%}checked{% endif %}> {{cat.name}} <br>
+      <label><input type="radio" name="category_id" value="{{cat.id}}" {% if event.category_id == cat.id%}checked{% endif %}> {{cat.name}}</label> <br>
     {% endfor %}
 
     <input type="submit" value="Save Event">

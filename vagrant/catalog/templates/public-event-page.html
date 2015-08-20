@@ -6,7 +6,41 @@
 
 
 {% block content %}
-<h2>PUBLIC</h2>
-Public | {{event.title}}
-<a href="/event/{{event.id}}/JSON/">JSON</a>
+
+  <div class="row event-page">
+    <div class="col-sm-12 title-container">
+      <a href="{{ url_for('homePage') }}">Events</a> > <a href="{{url_for('categoryPage', category_id=event.category_id)}}">{{event.category.name}}</a>
+      <h2>{{event.title}}</h2>
+      <small>Created by <a href="{{ url_for('userPage', user_id=event.creator.id) }}">{{event.creator.username}}</a></small>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-12">
+        {% if event_images %}
+          {% for img in event_images %}
+            <img src="/{{img.serving_url}}" alt="" width="100%">
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-sm-12">
+      <section>
+        <h3>Description</h3>
+        <p>{{event.description}}</p>
+      </section>
+    </div>
+
+  </div>
+
+<script>
+  // $('#event_image_upload_form').hide()
+
+
+</script>
+
+
 {% endblock %}
+
+
+

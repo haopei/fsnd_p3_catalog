@@ -1,0 +1,53 @@
+.header {
+  margin-bottom: 20px;
+  background-color: #EEE;
+  padding: 20px 0;
+}
+
+nav {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin: 20px 0;
+}
+
+.flash {
+  background-color: #FFC;
+  border: 1px solid #EAEAEA;
+}
+
+.top-right {
+  text-align: right;
+}
+
+.image-upload-container {
+  padding: 10px;
+  border: 1px dashed #AAA;
+  margin: 20px 0;
+  border-radius: 5px;
+  background-color: #F5F5F5;
+}
+
+.event-page h2 {
+  margin-bottom: 0;
+}
+
+.title-container {
+  margin-bottom: 20px
+}
+
+
+.categories-list {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+}
+
+.categories-list li {
+  line-height: 2em;
+  border-bottom: 1px dotted #DDD;
+  font-size: 0.9em;
+}
+
+.all_events h4 {
+  margin-bottom: 0;
+}

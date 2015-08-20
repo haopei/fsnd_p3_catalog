@@ -6,30 +6,37 @@
 
 {% block content %}
 
-Logged in as {{user.username}} ({{user.id}}) |  <a href="/logout">Logout</a>
-
-  <div class="flash">
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-        {% for msg in messages %}
-          <li>{{msg}}</li>
-        {% endfor %}
+<div class="container">
+  <div class="row">
+    <div class="col-sm-3">
+      <h4>Event Categories</h4>
+      {% if all_categories %}
+        <ul class="categories-list">
+          {% for cat in all_categories %}
+            <li><a href="{{ url_for('categoryPage', category_id=cat.id) }}">{{cat.name}}</a></li>
+          {% endfor %}
         </ul>
       {% endif %}
-    {% endwith %}
+    </div>
+    <div class="col-sm-9">
+      <h2>Upcoming Events</h2>
+      {% if all_events %}
+        <ul class="all_events">
+        {% for event in all_events %}
+          <li>
+              <h4><a href="{{ url_for('showEvent', event_id=event.id) }}">{{event.title}}</a></h4>
+              <small>Created by <a href="{{ url_for('userPage', user_id=event.creator.id) }}">{{event.creator.username}}</a> in <a href="{{ url_for('categoryPage', category_id=event.category_id) }}">{{event.category.name}}</a></small>
+          </li>
+        {% endfor %}
+        </ul>
+
+      {% else %}
+        <p>No event coming up. Check back later.</p>
+      {% endif %}
+    </div>
   </div>
+</div>
 
-  {% if all_events %}
-    {% for event in all_events %}
-    <ul>
-      <li>
-        <a href="/event/{{event.id}}/">{{event.title}} | by {{event.creator_id}}</a> |
-        Category: <a href="/category/{{event.category_id}}/">{{event.category_id}}</a>
-
-      </li>
-    </ul>
-    {% endfor %}
-  {% endif %}
 
 {% endblock %}
+

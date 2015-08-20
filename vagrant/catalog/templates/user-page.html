@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+  {{user.username}}
+{% endblock %}
+
+
+{% block content %}
+
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-12">
+        <h2>Events by {{user.username}}</h2>
+        {% if events %}
+          <ul>
+            {% for event in events %}
+              <li><a href="{{ url_for('showEvent', event_id=event.id) }}">{{event.title}}</a></li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <small>No events created yet.</small>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

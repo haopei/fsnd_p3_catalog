@@ -2,13 +2,16 @@
 <rss version="2.0">
   <channel>
 
-    <title>My Events Feed</title>
+    <title>My Events Feed (XML)</title>
     <link>http://localhost:5000</link>
 
+    {% for event in events %}
     <item>
-      <title> Title of my thing</title>
-      <description>This is the description man</description>
+      <title>{{event.title}}</title>
+      <description>{{event.description}}</description>
+      <link>{{url_for('showEvent', event_id=event.id)}}</link>
     </item>
+    {% endfor %}
 
   </channel>
 </rss>
