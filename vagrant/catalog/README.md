@@ -19,7 +19,7 @@ There are 4 data models:
  - `Image`: The image file of the Event entities.
 
 ## Rubric:
- - [x] Implement json endpoint with all required content. Implement additional api endpoints (Aom)
+ - [x] Implement json endpoint with all required content. Implement additional api endpoints (Atom)
  - [x] Add image that reads from db
  - [x] New item form includes image input
  - [x] Include item images.
@@ -44,23 +44,23 @@ There are 4 data models:
 
 #### How Google Connect works:
 
- 1. The user clicks on Google Sign In button which contains the client_id of the registered app with Google API. If the client ID is valid, Google returns a result object (authResult).
+ 1. The user clicks on Google Sign In button which contains the client ID of the registered app with Google API. If the client ID is valid, Google returns a result object (`authResult`).
 
- 2. A callback function is specified, signInCallback(), and handles the returned authResult object by sending the authResult['code'] data, along with the state token, to the /gconnect handler via an AJAX request. Note: A unique state token is generated during each page's refresh. The same token is saved as login_session['state']. The login_session object is `flask.session`.
+ 2. A callback function is specified, `signInCallback()`, and handles the returned authResult object by sending the `authResult['code']` data, along with the state token, to the `/gconnect` handler via an AJAX request. Note: A unique state token is generated during each page's refresh. The same token is saved as `login_session['state']`. The `login_session` object is `flask.session`.
 
- 3. The /gconnect handler receives the authResult['code'] and state token. It compares to see `request.arg.get('state') == login_session['state'] to validate the request to be forgery-free.
+ 3. The `/gconnect` handler receives the `authResult['code']` and state token. It compares to see `request.arg.get('state') == login_session['state'] to validate the request to be forgery-free.
 
- 4. The auth_code (from request.data in ajax request) is then used for upgrading into a 'credential' object. This is the `oauth2client.client.OAuth2Credentials` object.
+ 4. The auth code (from request.data in ajax request) is then used for upgrading into a 'credential' object. This is the `oauth2client.client.OAuth2Credentials` object.
 
- 5. Using httplib2.Http(), the credentials.access_token is sent to googleapi for validation via an acces token validation url.
+ 5. Using `httplib2.Http()`, the `credentials.access_token` is sent to Google API server for validation via an acces token validation url.
 
- 6. Check for the access token to be intended for the rightful user by comparing access_token_validation_result['user_id'] == credentials.id_token['sub']
+ 6. Check for the access token to be intended for the rightful user by comparing `access_token_validation_result['user_id'] == credentials.id_token['sub']`
 
- 7. Check if user is already logged in by checking if login_session['access_token'] exists and login_session['access_token'] == login_session['gplus_id']
+ 7. Check if user is already logged in by checking if `login_session['access_token']` exists and `login_session['access_token'] == login_session['gplus_id']`
 
  8. Use an http request to get user data using the userinfo_url. Store the returned user_data in login_session object. The create_user() function uses the login_session object to create new users.
 
- Note that the auth_code is used for upgrading into a credentials object, while the access_token is used for validating using the http request.
+ *Note that the auth_code is used for upgrading into a credentials object, while the access_token is used for validating using the http request.*
 
 
 #### Image Uploads
