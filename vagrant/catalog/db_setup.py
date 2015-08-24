@@ -35,6 +35,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String(250), nullable=False)
     email = Column(String(500), nullable=False)
+    picture = Column(String(1000))
 
 
 # Event class

@@ -8,7 +8,7 @@
 {% block content %}
 
   <form action="#" method="post">
-    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="_csrf_token" value="{{ generate_csrf_token() }}">
 
     <label for="event-title">Title</label><br>
     <input type="text" name="title" id="event-title" value="{{event.title}}" placeholder="Event Title"/>

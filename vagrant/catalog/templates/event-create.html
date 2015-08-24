@@ -16,7 +16,7 @@
 
     <div class="col-xs-12">
       <form action="/event/create/" method="POST">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="_csrf_token" value="{{ generate_csrf_token() }}">
 
         <label for="event-title">Title</label><br>
         <input type="text" name="title" id="event-title" placeholder="Event Title"/> <br> <br>

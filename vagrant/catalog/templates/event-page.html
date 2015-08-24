@@ -22,10 +22,13 @@
           {% endfor %}
         {% else %}
         <div class="row image-upload-container">
-          <div class="col-sm-8">You can upload an image for your event.</div>
+          <div class="col-sm-8">
+            <h4>You can upload an image for your event.</h4>
+            <img src="/static/images/img-placeholder.jpg" alt="Upload image">
+          </div>
           <div class="col-sm-4">
             <form action="/upload/{{event.id}}/" method="post" enctype="multipart/form-data" id="event_image_upload_form">
-              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="_csrf_token" value="{{ generate_csrf_token() }}">
               <input type="file" name="file">
               <input type="submit" value="Upload Image">
              </form>
@@ -51,13 +54,6 @@
     </div>
 
   </div>
-
-<script>
-  // $('#event_image_upload_form').hide()
-
-
-</script>
-
 
 {% endblock %}
 
