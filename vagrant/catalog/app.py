@@ -110,7 +110,7 @@ NO_CSRF_REQUIRED = ['/gconnect']
 # CSRF Protection
 #   Guide: http://flask.pocoo.org/snippets/3/
 
-# Before a request
+# Before a POST request is made, run this function
 @app.before_request
 def csrf_protect():
     if request.method == "POST" and request.path not in NO_CSRF_REQUIRED:
@@ -247,7 +247,8 @@ def gconnect():
 def logout():
 
     # Check if user is logged in
-    if login_session.get('access_token') is None:
+    access_token = login_session.get('access_token')
+    if access_token is None:
         response = make_response(json.dumps('User is not logged in.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response

@@ -18,32 +18,34 @@ There are 4 data models:
  - `Category`: The taxonomy of the Event entities.
  - `Image`: The image file of the Event entities.
 
- ## Rubric:
- [x] implement json endpoint with all required content. Implement additional api endpoints (Aom)
- [x] Add image that reads from db
- [x] New item form includes image input
- [x] Include item images.
- [x] Readme doc
- [x] Uses nonces to avoid cross-site request forgeries (CSRF)
- [x] page reads category and item info from db.
- [x] Add new items.
- [x] Page includes edit/update functionality.
- [x] Delete functionality.
- [x] Implement a third party authorization and authentication process.
- [x] CRUD operations should consider authorization status prior to execution.
- [x] Code quality is neatly formatted
- [x] Code comments
+## Rubric:
+[x] implement json endpoint with all required content. Implement additional api endpoints (Aom)
+[x] Add image that reads from db
+[x] New item form includes image input
+[x] Include item images.
+[x] Readme doc
+[x] Uses nonces to avoid cross-site request forgeries (CSRF)
+[x] page reads category and item info from db.
+[x] Add new items.
+[x] Page includes edit/update functionality.
+[x] Delete functionality.
+[x] Implement a third party authorization and authentication process.
+[x] CRUD operations should consider authorization status prior to execution.
+[x] Code quality is neatly formatted
+[x] Code comments
 
 
 ## Notes
 
+ #### Templates
+
  - *Templates*: All templates inherit from the `base.html` parent template.
 
- ## Google Login
+ #### Google Login
 
- - *Google+ Login State Token*: Users may gconnect from any page where the gconnect button is visible. The gconnect button is placed inside the `base.html` parent template. The login state token is injected into templates via the flask.g object, and the @inject_state_token decorated function.
+ Google+ Login State Token: Users may gconnect from any page where the gconnect button is visible. The gconnect button is placed inside the `base.html` parent template. The login state token is injected into templates via the flask.g object, and the @inject_state_token decorated function.
 
- How Google Connect works:
+ #### How Google Connect works:
  1. The user clicks on Google Sign In button which contains the client_id of the registered app with Google API. If the client ID is valid, Google returns a result object (authResult).
 
  2. A callback function is specified, signInCallback(), and handles the returned authResult object by sending the authResult['code'] data, along with the state token, to the /gconnect handler via an AJAX request. Note: A unique state token is generated during each page's refresh. The same token is saved as login_session['state']. The login_session object is `flask.session`.
