@@ -19,33 +19,31 @@ There are 4 data models:
  - `Image`: The image file of the Event entities.
 
 ## Rubric:
-[x] implement json endpoint with all required content. Implement additional api endpoints (Aom)
-[x] Add image that reads from db
-[x] New item form includes image input
-[x] Include item images.
-[x] Readme doc
-[x] Uses nonces to avoid cross-site request forgeries (CSRF)
-[x] page reads category and item info from db.
-[x] Add new items.
-[x] Page includes edit/update functionality.
-[x] Delete functionality.
-[x] Implement a third party authorization and authentication process.
-[x] CRUD operations should consider authorization status prior to execution.
-[x] Code quality is neatly formatted
-[x] Code comments
+ - [x] Implement json endpoint with all required content. Implement additional api endpoints (Aom)
+ - [x] Add image that reads from db
+ - [x] New item form includes image input
+ - [x] Include item images.
+ - [x] Readme doc
+ - [x] Uses nonces to avoid cross-site request forgeries (CSRF)
+ - [x] Page reads category and item info from db.
+ - [x] Add new items.
+ - [x] Page includes edit/update functionality.
+ - [x] Delete functionality.
+ - [x] Implement a third party authorization and authentication process.
+ - [x] CRUD operations should consider authorization status prior to execution.
+ - [x] Code quality is neatly formatted
+ - [x] Code comments
 
 
-## Notes
+#### Templates
+ All templates inherit from the `base.html` parent template.
 
- #### Templates
-
- - *Templates*: All templates inherit from the `base.html` parent template.
-
- #### Google Login
+#### Google Login
 
  Google+ Login State Token: Users may gconnect from any page where the gconnect button is visible. The gconnect button is placed inside the `base.html` parent template. The login state token is injected into templates via the flask.g object, and the @inject_state_token decorated function.
 
- #### How Google Connect works:
+#### How Google Connect works:
+
  1. The user clicks on Google Sign In button which contains the client_id of the registered app with Google API. If the client ID is valid, Google returns a result object (authResult).
 
  2. A callback function is specified, signInCallback(), and handles the returned authResult object by sending the authResult['code'] data, along with the state token, to the /gconnect handler via an AJAX request. Note: A unique state token is generated during each page's refresh. The same token is saved as login_session['state']. The login_session object is `flask.session`.
@@ -65,22 +63,22 @@ There are 4 data models:
  Note that the auth_code is used for upgrading into a credentials object, while the access_token is used for validating using the http request.
 
 
-## Image Uploads
+#### Image Uploads
 
  - The event's image upload form is found on the event page, the event is created.
  - The filename of the uploaded file is renamed using the `rename_file()` function. This ensures that each filename is unique.
  - Images are uploaded into the `catalog/uploads` folder.
 
-## Protection against CSRF
+#### Protection against CSRF
 
  - Protection against cross-site request forgeries is built using this guide: http://flask.pocoo.org/snippets/3/
  - A csrf token is generated and stored within the login_session object, and sent to each html form via a hidden input. On form submission, this token must match the one stored within the login_session object; the request is aborted otherwise.
 
 
-## Authorization
+#### Authorization
 
  - To ensure that the user is able to perform his own scope of authorized actions, two decorated functions are used — `@login_required`, `@logged_in_as_author_required`
 
-## Feeds
+#### Feeds
 
  - Atom feeds are done using AtomFeed from `werzeug.contrib.atom` module (http://flask.pocoo.org/snippets/10/)
