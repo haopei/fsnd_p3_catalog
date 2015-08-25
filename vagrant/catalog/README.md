@@ -2,15 +2,27 @@
 
 This website displays events, which are categorized in their respective categories.
 
-## How to Run
+#### How to Start App
 
- 1. `cd into p3_category/vagrant`, run `vagrant up`, then `vagrant ssh`.
- 2. Enter project folder using `cd /vagrant/catalog`.
- 3. Setup the database using `python db_setup.py`
- 4. Run the app using `python app.py`
+ 1. Navigate into project vagrant directory: `cd p3_category/vagrant`,
+ 2. Run `vagrant up`, then `vagrant ssh`.
+ 3. Enter project folder using `cd /vagrant/catalog`.
+ 4. Setup the database using `python db_setup.py`
+ 5. Run `python fill.py` to create some `Category` items
+ 6. Run the app using `python app.py`
+
+#### How to Use App
+
+ 1. After starting the app, go to `http://localhost:5000/` in the browser
+ 2. To create/modify content, the user must login using Google+. Click the Google "Sign in" button to authenticate with your Google+ account.
+ 3. Once logged in, click "Create Event" to view event submission form. (Form validation is not included, so please complete all forms fields)
+ 4. Once an event is created, its author may edit it by clicking "Edit Event" or "Delete Event" (links located at bottom of event page).
+ 5. View the author's page by clicking his name, and see all events created by this user.
+ 6. Click a category to see all events listed under this category.
+ 7. See JSON and ATOM formats of all events by clicking "JSON" or "Atom" at the bottom of page.
 
 
-## Database Setup
+#### Database Setup
 
 There are 4 data models:
  - `Event`: The event or activity entities happening in Guyana. This is the primary content of the app.
@@ -18,7 +30,7 @@ There are 4 data models:
  - `Category`: The taxonomy of the Event entities.
  - `Image`: The image file of the Event entities.
 
-## Rubric:
+#### Rubric:
  - [x] Implement json endpoint with all required content. Implement additional api endpoints (Atom)
  - [x] Add image that reads from db
  - [x] New item form includes image input

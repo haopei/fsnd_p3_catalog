@@ -11,7 +11,7 @@
     <div class="col-sm-12 title-container">
       <a href="{{ url_for('homePage') }}">Events</a> > <a href="{{url_for('categoryPage', category_id=event.category_id)}}">{{event.category.name}}</a>
       <h2>{{event.title}}</h2>
-      <small>Created by <a href="{{ url_for('userPage', user_id=event.creator.id) }}">{{event.creator.username}}</a></small>
+      <small>Created by <a href="{{ url_for('userPage', user_id=event.creator.id) }}">{{event.creator.username}}</a> | <a href="/event/{{event.id}}/JSON/">Event JSON</a></small>
     </div>
 
     <div class="row">
@@ -46,7 +46,7 @@
       <div class="row">
         <div class="col-xs-12">
           <hr>
-          <a href="/event/{{event.id}}/edit/">Edit Event</a> | <a href="/event/{{event.id}}/delete/">Delete Event</a> | <a href="/event/{{event.id}}/JSON/">Event JSON</a>
+          <a href="/event/{{event.id}}/edit/">Edit Event</a> | <a href="/event/{{event.id}}/delete/">Delete Event</a>
         </div>
       </div>
       </section>
